@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: owasp-top10-poc
+  datasource:
+    url: jdbc:h2:mem:owaspdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true      # NOTE: enabled here only for the A02 demo; disabled by the secure config
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+# ---------------------------------------------------------------------------
+# Demo-only secrets. In a real app these MUST come from a vault / env, never
+# committed. Used by the A04 / A07 PoCs to contrast weak vs strong handling.
+# ---------------------------------------------------------------------------
+poc:
+  jwt:
+    # 32+ byte random secret for HS256. The "vulnerable" path ignores this and
+    # uses a trivially guessable key on purpose.
+    strong-secret: "c2VjdXJlLXJhbmRvbS0zMi1ieXRlLXNlY3JldC1rZXktMDEyMzQ1Njc4OQ=="
+
+logging:
+  level:
+    root: INFO
+    com.security.poc: DEBUG

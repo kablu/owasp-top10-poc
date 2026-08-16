@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Stored XSS</title>
+    <style>body{font-family:system-ui,sans-serif;max-width:820px;margin:2rem auto;padding:0 1rem}
+        li{margin:.3rem 0;padding:.3rem;border-bottom:1px solid #eee}
+        .box{border:1px solid #ccc;border-radius:8px;padding:1rem;margin:1rem 0}</style>
+</head>
+<body>
+    <h1>Stored XSS —
+        <span th:text="${escaped} ? 'SECURE (escaped)' : 'VULNERABLE (raw)'">mode</span></h1>
+
+    <form th:action="${postPath}" method="post">
+        <input name="text" size="50" placeholder="write a comment... try <img src=x onerror=alert(1)>"/>
+        <button type="submit">Post</button>
+    </form>
+
+    <div class="box">
+        <h3>Comments</h3>
+        <ul>
+            <!-- VULNERABLE: stored input rendered unescaped -> persistent payload
+                 runs for every visitor of the board. -->
+            <li th:if="${!escaped}" th:each="c : ${comments}" th:utext="${c}">comment</li>
+            <!-- SECURE: rendered escaped -> stored payload is inert text. -->
+            <li th:if="${escaped}"  th:each="c : ${comments}" th:text="${c}">comment</li>
+        </ul>
+    </div>
+
+    <p><a href="/clientside">&larr; back to menu</a></p>
+</body>
+</html>

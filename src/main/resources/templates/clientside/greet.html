@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Reflected XSS</title>
+    <style>body{font-family:system-ui,sans-serif;max-width:820px;margin:2rem auto;padding:0 1rem}
+        .box{border:1px solid #ccc;border-radius:8px;padding:1rem;margin:1rem 0}</style>
+</head>
+<body>
+    <h1>Reflected XSS —
+        <span th:text="${escaped} ? 'SECURE (escaped)' : 'VULNERABLE (raw)'">mode</span></h1>
+
+    <div class="box">
+        <!-- VULNERABLE: th:utext writes the value WITHOUT HTML-escaping.
+             A <script> payload in ?name= will execute in the browser. -->
+        <p th:if="${!escaped}">Hello, <span th:utext="${name}">name</span>!</p>
+
+        <!-- SECURE: th:text HTML-escapes the value, so a payload is shown as
+             harmless text and never runs. -->
+        <p th:if="${escaped}">Hello, <span th:text="${name}">name</span>!</p>
+    </div>
+
+    <p><a href="/clientside">&larr; back to menu</a></p>
+</body>
+</html>

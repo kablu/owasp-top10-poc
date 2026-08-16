@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Client-side Security Demo (XSS &amp; CSRF)</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 820px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { border-bottom: 2px solid #333; padding-bottom: .3rem; }
+        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; }
+        .vuln { color: #b00020; font-weight: 600; }
+        .secure { color: #0a7d28; font-weight: 600; }
+        code { background: #f3f3f3; padding: .1rem .3rem; border-radius: 4px; }
+        a { text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>Client-side Security — XSS &amp; CSRF</h1>
+    <p>Each attack has a <span class="vuln">vulnerable</span> and a
+       <span class="secure">secure</span> version. Try the payloads and compare.</p>
+
+    <div class="card">
+        <h2>1. Reflected XSS</h2>
+        <p>Payload to try in the name box:
+           <code>&lt;script&gt;alert('xss')&lt;/script&gt;</code></p>
+        <form action="/clientside/vuln/greet" method="get">
+            <input name="name" placeholder="your name" value="&lt;script&gt;alert('xss')&lt;/script&gt;"/>
+            <button class="vuln" type="submit">Greet (VULN)</button>
+        </form>
+        <form action="/clientside/secure/greet" method="get" style="margin-top:.5rem">
+            <input name="name" placeholder="your name" value="&lt;script&gt;alert('xss')&lt;/script&gt;"/>
+            <button class="secure" type="submit">Greet (SECURE)</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>2. Stored XSS (comment board)</h2>
+        <p><a class="vuln" href="/clientside/vuln/comments">Open VULN board</a> &nbsp;|&nbsp;
+           <a class="secure" href="/clientside/secure/comments">Open SECURE board</a></p>
+        <p>Post <code>&lt;img src=x onerror=alert(1)&gt;</code> on each and watch the difference.</p>
+    </div>
+
+    <div class="card">
+        <h2>3. CSRF (change account email)</h2>
+        <p><a class="vuln" href="/clientside/vuln/change-email">VULN form (no token)</a> &nbsp;|&nbsp;
+           <a class="secure" href="/clientside/secure/change-email">SECURE form (CSRF token)</a></p>
+        <p>The secure POST rejects any request missing the synchronizer token (403).</p>
+    </div>
+</body>
+</html>

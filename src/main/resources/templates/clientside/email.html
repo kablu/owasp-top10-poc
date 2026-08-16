@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>CSRF</title>
+    <style>body{font-family:system-ui,sans-serif;max-width:820px;margin:2rem auto;padding:0 1rem}
+        .box{border:1px solid #ccc;border-radius:8px;padding:1rem;margin:1rem 0}
+        .ok{color:#0a7d28}</style>
+</head>
+<body>
+    <h1>Change Email —
+        <span th:text="${secure} ? 'SECURE (CSRF token)' : 'VULNERABLE (no token)'">mode</span></h1>
+
+    <p>Current email: <b th:text="${currentEmail}">-</b></p>
+    <p th:if="${changed}" class="ok">Email updated.</p>
+
+    <div class="box">
+        <form th:action="${postPath}" method="post">
+            <!-- SECURE: include the synchronizer token. Spring Security's
+                 CsrfFilter validates it; a cross-site POST without it gets 403.
+                 (CSRF is enabled for /clientside/secure/** in SecurityConfig.) -->
+            <input th:if="${secure}" type="hidden"
+                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <!-- VULNERABLE side sends NO token, and the endpoint doesn't require
+                 one, so any attacker-controlled page can forge this POST. -->
+            <input name="email" size="30" placeholder="new@example.com"/>
+            <button type="submit">Update email</button>
+        </form>
+    </div>
+
+    <p><a href="/clientside">&larr; back to menu</a></p>
+</body>
+</html>
