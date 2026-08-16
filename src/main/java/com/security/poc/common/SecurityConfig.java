@@ -60,7 +60,10 @@ public class SecurityConfig {
                     "/h2-console/**",
                     "/a01/**", "/a02/**", "/a03/**", "/a04/**", "/a05/**",
                     "/a06/**", "/a07/**", "/a08/**", "/a09/**", "/a10/**",
-                    "/clientside/vuln/**"))
+                    "/clientside/vuln/**",
+                    // PortSwigger topic PoCs are stateless REST endpoints exercised
+                    // from Postman/curl, so CSRF adds nothing there.
+                    "/ps/**"))
             .authorizeHttpRequests(auth -> auth
                 // Public: home page, static help, and every intentionally-vulnerable demo.
                 .requestMatchers("/", "/index", "/error", "/h2-console/**").permitAll()
@@ -75,6 +78,9 @@ public class SecurityConfig {
                 // Client-side (XSS/CSRF) demo: public so it's easy to open in a
                 // browser. CSRF protection (above) still guards the secure form.
                 .requestMatchers("/clientside/**").permitAll()
+                // PortSwigger topic PoCs: public. Each controller demonstrates its
+                // own control (headers, tokens, allowlists) internally.
+                .requestMatchers("/ps/**").permitAll()
                 .anyRequest().permitAll()
             )
             // HTTP Basic is enough to demo auth; form login also enabled for browsers.

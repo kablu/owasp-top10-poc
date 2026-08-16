@@ -1,0 +1,57 @@
+{
+  "info": {
+    "name": "PortSwigger - Client-side (vuln vs secure)",
+    "description": "Client-side web security topics. XSS/DOM/clickjacking are best viewed in a browser; the requests still show the response markup/headers. Base URL variable: baseUrl.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Cross-site scripting (XSS)",
+      "item": [
+        { "name": "VULN - reflected (raw)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/clientside/xss/vuln/search?q=<script>alert(document.domain)</script>" } },
+        { "name": "SECURE - HTML-encoded", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/clientside/xss/secure/search?q=<script>alert(document.domain)</script>" } }
+      ]
+    },
+    {
+      "name": "CSRF",
+      "item": [
+        { "name": "1) GET token", "request": { "method": "GET", "header": [ { "key": "X-Session", "value": "demo-session" } ], "url": "{{baseUrl}}/ps/clientside/csrf/token" } },
+        { "name": "VULN - change email (no token)", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/clientside/csrf/vuln/change-email?email=attacker@evil.com" } },
+        { "name": "SECURE - no token (403)", "request": { "method": "POST", "header": [ { "key": "X-Session", "value": "demo-session" } ], "url": "{{baseUrl}}/ps/clientside/csrf/secure/change-email?email=attacker@evil.com&_csrf=WRONG" } },
+        { "name": "SECURE - with token (paste from step 1)", "request": { "method": "POST", "header": [ { "key": "X-Session", "value": "demo-session" } ], "url": "{{baseUrl}}/ps/clientside/csrf/secure/change-email?email=new@example.com&_csrf=PASTE_TOKEN_HERE" } }
+      ]
+    },
+    {
+      "name": "CORS",
+      "item": [
+        { "name": "VULN - reflects Origin + credentials", "request": { "method": "GET", "header": [ { "key": "Origin", "value": "https://evil.example" } ], "url": "{{baseUrl}}/ps/clientside/cors/vuln/data" } },
+        { "name": "SECURE - allowlist (evil gets no ACAO)", "request": { "method": "GET", "header": [ { "key": "Origin", "value": "https://evil.example" } ], "url": "{{baseUrl}}/ps/clientside/cors/secure/data" } },
+        { "name": "SECURE - trusted origin allowed", "request": { "method": "GET", "header": [ { "key": "Origin", "value": "https://trusted.example.com" } ], "url": "{{baseUrl}}/ps/clientside/cors/secure/data" } }
+      ]
+    },
+    {
+      "name": "Clickjacking",
+      "item": [
+        { "name": "VULN - no frame protection", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/clientside/clickjacking/vuln/account" } },
+        { "name": "SECURE - X-Frame-Options/CSP", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/clientside/clickjacking/secure/account" } }
+      ]
+    },
+    {
+      "name": "DOM-based (open in browser + #payload)",
+      "item": [
+        { "name": "VULN - innerHTML sink", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/clientside/dombased/vuln/page" } },
+        { "name": "SECURE - textContent sink", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/clientside/dombased/secure/page" } }
+      ]
+    },
+    {
+      "name": "WebSockets",
+      "item": [
+        { "name": "VULN - origin unchecked + raw echo", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "https://evil.example" } ], "body": { "mode": "raw", "raw": "{ \"message\": \"<img src=x onerror=alert(1)>\" }" }, "url": "{{baseUrl}}/ps/clientside/websockets/vuln/message" } },
+        { "name": "SECURE - origin blocked (403)", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "https://evil.example" } ], "body": { "mode": "raw", "raw": "{ \"message\": \"<img src=x onerror=alert(1)>\" }" }, "url": "{{baseUrl}}/ps/clientside/websockets/secure/message" } }
+      ]
+    }
+  ]
+}

