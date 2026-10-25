@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security PoC Index</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#121825; --panel2:#0e1420; --border:#243049;
+    --text:#e6edf6; --muted:#93a1b5; --accent:#22d3ee; --vuln:#ff5d6c; --secure:#3ddc97;
+    --code:#0a0e16;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{display:flex;min-height:100vh}
+  nav{width:280px;flex:0 0 280px;background:var(--panel2);border-right:1px solid var(--border);
+    position:sticky;top:0;height:100vh;overflow-y:auto;padding:18px 14px}
+  nav h1{font-size:16px;margin:0 0 4px;color:var(--text)}
+  nav .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  nav .grp{color:var(--accent);text-transform:uppercase;font-size:11px;letter-spacing:.08em;
+    margin:16px 0 6px}
+  nav a.item{display:block;color:var(--muted);padding:3px 8px;border-radius:6px;font-size:13px}
+  nav a.item:hover{background:var(--panel);color:var(--text)}
+  main{flex:1;padding:26px 30px;max-width:1000px}
+  .search{width:100%;padding:11px 14px;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;color:var(--text);font-size:14px;margin-bottom:8px}
+  .hint{color:var(--muted);font-size:12px;margin-bottom:22px}
+  .warn{background:#2a1416;border:1px solid #512; color:#ffb3ba;padding:10px 14px;border-radius:10px;
+    font-size:13px;margin-bottom:22px}
+  h2.cat{font-size:20px;margin:30px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:16px 18px;margin:14px 0}
+  .card h3{margin:0 0 2px;font-size:16px}
+  .cwe{color:var(--muted);font-size:12px;font-weight:600}
+  .lbl{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;
+    margin-right:6px;vertical-align:middle}
+  .lbl.p{background:rgba(255,93,108,.15);color:var(--vuln);border:1px solid rgba(255,93,108,.4)}
+  .lbl.s{background:rgba(61,220,151,.13);color:var(--secure);border:1px solid rgba(61,220,151,.4)}
+  .row{margin:9px 0}
+  .row .t{color:var(--muted);font-size:13px}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:9px 11px;
+    overflow-x:auto;margin:5px 0 0;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre .m{color:var(--accent)}
+  code.ep{background:var(--code);border:1px solid var(--border);border-radius:5px;padding:1px 6px;
+    font:12.5px ui-monospace,Menlo,Consolas,monospace;color:#cfe}
+  .none{color:var(--muted);padding:30px 0;display:none}
+  @media(max-width:860px){nav{display:none}main{padding:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <h1>Security PoC Index</h1>
+  <div class="sub">Problem &rarr; Solution, every demo</div>
+  <div class="grp">OWASP Top 10:2025</div>
+  <a class="item" href="#a01">A01 Broken Access Control</a>
+  <a class="item" href="#a02">A02 Security Misconfiguration</a>
+  <a class="item" href="#a03">A03 Supply Chain</a>
+  <a class="item" href="#a04">A04 Cryptographic Failures</a>
+  <a class="item" href="#a05">A05 Injection (SQLi)</a>
+  <a class="item" href="#a06">A06 Insecure Design</a>
+  <a class="item" href="#a07">A07 Authentication Failures</a>
+  <a class="item" href="#a08">A08 Integrity Failures</a>
+  <a class="item" href="#a09">A09 Logging &amp; Alerting</a>
+  <a class="item" href="#a10">A10 Exceptional Conditions</a>
+  <div class="grp">Roadmap gap-demos</div>
+  <a class="item" href="#spel">SpEL Injection</a>
+  <a class="item" href="#ldap">LDAP Injection</a>
+  <a class="item" href="#openredirect">Open Redirect</a>
+  <a class="item" href="#session">Session Fixation / Cookies</a>
+  <a class="item" href="#actuator">Actuator Exposure</a>
+  <div class="grp">DAST points</div>
+  <a class="item" href="#httpmethods">Insecure HTTP Methods</a>
+  <a class="item" href="#cache">Cacheable Sensitive Data</a>
+  <a class="item" href="#urlsecret">Secret in URL</a>
+  <a class="item" href="#crlf">CRLF / Response Splitting</a>
+  <div class="grp">Reference</div>
+  <a class="item" href="#portswigger">PortSwigger topics</a>
+</nav>
+<main>
+  <input id="q" class="search" placeholder="Filter demos… (type sqli, jwt, cache, redirect…)">
+  <div class="hint">Base URL <code class="ep">http://localhost:8080</code> &middot; run with <code class="ep">./gradlew bootRun</code>. Each card: the <b style="color:var(--vuln)">Problem</b> (vulnerable endpoint) and its <b style="color:var(--secure)">Solution</b> (secure endpoint).</div>
+  <div class="warn">&#9888; Lab use only. Every <code class="ep">/vuln/**</code> endpoint and the open <code class="ep">/actuator/**</code> are intentionally insecure. Never deploy this app.</div>
+  <div id="cards">
+  <h2 class="cat" id="owasp">OWASP Top 10:2025</h2>
+
+  <div class="card" id="a01" data-k="a01 broken access control idor privilege escalation authorization">
+    <h3>A01 — Broken Access Control <span class="cwe">CWE-639 / CWE-285</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">IDOR: any account is returned by id with no ownership check; admin area ungated.</span>
+      <pre><span class="m">GET</span> /a01/vuln/account/2        # leaks bob's card</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Verify caller owns the object (else 403); gate admin with <code class="ep">@PreAuthorize("hasRole('ADMIN')")</code>.</span>
+      <pre><span class="m">GET</span> /a01/secure/account/2      # 403; /a01/secure/admin/dashboard = ADMIN only</pre></div>
+  </div>
+
+  <div class="card" id="a02" data-k="a02 security misconfiguration info leak headers csp hsts">
+    <h3>A02 — Security Misconfiguration <span class="cwe">CWE-16 / CWE-200</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Config dump exposes DB creds, JWT secret, internal hosts, versions.</span>
+      <pre><span class="m">GET</span> /a02/vuln/config</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Return only <code class="ep">{"status":"UP"}</code>; <code class="ep">SecureHeadersConfig</code> adds CSP / X-Frame-Options / HSTS / nosniff.</span>
+      <pre><span class="m">GET</span> /a02/secure/config</pre></div>
+  </div>
+
+  <div class="card" id="a03" data-k="a03 supply chain dependency pinning integrity cve">
+    <h3>A03 — Software Supply Chain Failures <span class="cwe">CWE-1104</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Dynamic versions, untrusted mirror, no checksums/scanning.</span>
+      <pre><span class="m">GET</span> /a03/vuln/dependency-check</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Reject unpinned/denylisted deps; Gradle lockfiles, HTTPS-only repos, CI CVE scan.</span>
+      <pre><span class="m">GET</span> /a03/secure/dependency-check</pre></div>
+  </div>
+
+  <div class="card" id="a04" data-k="a04 cryptographic failures md5 base64 aes gcm bcrypt encryption">
+    <h3>A04 — Cryptographic Failures <span class="cwe">CWE-327</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Base64 "encryption theatre" + MD5 for secrets/passwords.</span>
+      <pre><span class="m">POST</span> /a04/vuln/store?data=...</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">AES-256-GCM (random IV per message) + BCrypt; key from config, never hardcoded.</span>
+      <pre><span class="m">POST</span> /a04/secure/store?data=...</pre></div>
+  </div>
+
+  <div class="card" id="a05" data-k="a05 injection sqli sql injection parameterized query prepared statement">
+    <h3>A05 — Injection (SQLi) <span class="cwe">CWE-89</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">User input concatenated into SQL — <code class="ep">' OR '1'='1</code> dumps all rows.</span>
+      <pre><span class="m">GET</span> /a05/vuln/search?username=' OR '1'='1</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Bound <code class="ep">?</code> parameter — the payload is treated as data.</span>
+      <pre><span class="m">GET</span> /a05/secure/search?username=...</pre></div>
+  </div>
+
+  <div class="card" id="a06" data-k="a06 insecure design business logic rate limit single use">
+    <h3>A06 — Insecure Design <span class="cwe">CWE-840</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Discount code with no single-use and no rate limit (business-logic abuse).</span>
+      <pre><span class="m">POST</span> /a06/vuln/redeem?code=...</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Atomic single-use (409 on reuse) + fixed-window rate limit (429). Design the control in.</span>
+      <pre><span class="m">POST</span> /a06/secure/redeem?code=...</pre></div>
+  </div>
+
+  <div class="card" id="a07" data-k="a07 authentication failures plaintext lockout jwt weak key enumeration">
+    <h3>A07 — Authentication Failures <span class="cwe">CWE-287 / CWE-307</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Plaintext password compare, user enumeration, no lockout, weak long-lived token.</span>
+      <pre><span class="m">POST</span> /a07/vuln/login?username=..&password=..</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">BCrypt verify, uniform error, lockout after 5 fails (423), short-lived HS256 JWT (strong key).</span>
+      <pre><span class="m">POST</span> /a07/secure/login?username=..&password=..</pre></div>
+  </div>
+
+  <div class="card" id="a08" data-k="a08 integrity failures deserialization objectinputstream hmac">
+    <h3>A08 — Software / Data Integrity Failures <span class="cwe">CWE-502</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Native Java <code class="ep">ObjectInputStream</code> deserialization of untrusted bytes (gadget-chain RCE).</span>
+      <pre><span class="m">POST</span> /a08/vuln/import     # body: base64 java-serialized</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">HMAC-SHA256 verified (constant time) <i>before</i> parsing, then bound to a known DTO only.</span>
+      <pre><span class="m">POST</span> /a08/secure/import    # body: signed JSON</pre></div>
+  </div>
+
+  <div class="card" id="a09" data-k="a09 logging alerting audit trail pii masking monitoring">
+    <h3>A09 — Security Logging &amp; Alerting Failures <span class="cwe">CWE-778 / CWE-532</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Money transfer with no audit trail (and naive "log everything" would leak the PAN).</span>
+      <pre><span class="m">POST</span> /a09/vuln/transfer?to=..&amount=..</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Structured audit event (who/what/when/outcome), PAN masked, alert over a threshold.</span>
+      <pre><span class="m">POST</span> /a09/secure/transfer?to=..&amount=..</pre></div>
+  </div>
+
+  <div class="card" id="a10" data-k="a10 exceptional conditions stack trace fail open fail closed">
+    <h3>A10 — Mishandling of Exceptional Conditions <span class="cwe">CWE-209 / CWE-636</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Raw stack trace returned; access check <b>fails open</b> (exception &rarr; access granted).</span>
+      <pre><span class="m">GET</span> /a10/vuln/divide?a=..&b=..   &middot;   /a10/vuln/access</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Validate input, generic error; <b>fail closed</b>; log details under a correlation id only.</span>
+      <pre><span class="m">GET</span> /a10/secure/divide?a=..&b=..  &middot;   /a10/secure/access</pre></div>
+  </div>
+  <h2 class="cat" id="roadmap">Roadmap gap-demos</h2>
+
+  <div class="card" id="spel" data-k="spel expression language injection rce simpleevaluationcontext">
+    <h3>SpEL Injection <span class="cwe">CWE-917</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">User input parsed with the default SpEL context — type refs &amp; method calls reachable (RCE).</span>
+      <pre><span class="m">GET</span> /roadmap/spel/vuln/eval?expr=T(java.lang.Runtime)</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Arithmetic allow-list + <code class="ep">SimpleEvaluationContext.forReadOnlyDataBinding()</code> — no type access.</span>
+      <pre><span class="m">GET</span> /roadmap/spel/secure/eval?expr=7*7</pre></div>
+  </div>
+
+  <div class="card" id="ldap" data-k="ldap injection active directory filter rfc 4515 escaping">
+    <h3>LDAP Injection <span class="cwe">CWE-90</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Input concatenated into the search filter — metacharacters rewrite it and bypass the password term.</span>
+      <pre><span class="m">GET</span> /roadmap/ldap/vuln/login?user=*)(uid=*&password=x   # authenticated=true</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Escape every value per RFC 4515 (or use LdapQueryBuilder) — metacharacters become inert.</span>
+      <pre><span class="m">GET</span> /roadmap/ldap/secure/login?user=alice&password=alice123</pre></div>
+  </div>
+
+  <div class="card" id="openredirect" data-k="open redirect cwe-601 allow-list phishing location">
+    <h3>Open Redirect <span class="cwe">CWE-601</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Redirect target taken from user input — sends victims off-site from a trusted link.</span>
+      <pre><span class="m">GET</span> /roadmap/openredirect/vuln/go?next=https://evil.example   # 302 off-site</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Allow-list of in-app paths; reject absolute and protocol-relative <code class="ep">//host</code> targets.</span>
+      <pre><span class="m">GET</span> /roadmap/openredirect/secure/go?next=/roadmap            # 400 for external</pre></div>
+  </div>
+
+  <div class="card" id="session" data-k="session fixation cookie httponly secure samesite changesessionid">
+    <h3>Session Fixation &amp; Cookie Flags <span class="cwe">CWE-384 / CWE-1004 / CWE-614</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Session id not rotated on login (fixation); cookie set without HttpOnly/Secure/SameSite.</span>
+      <pre><span class="m">POST</span> /roadmap/session/vuln/login?user=alice   # sessionIdChanged=false
+<span class="m">GET</span>  /roadmap/session/vuln/set-cookie        # SID=... (no flags)</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Rotate id with <code class="ep">changeSessionId()</code>; set <code class="ep">HttpOnly; Secure; SameSite=Strict</code>.</span>
+      <pre><span class="m">POST</span> /roadmap/session/secure/login?user=alice  # sessionIdChanged=true
+<span class="m">GET</span>  /roadmap/session/secure/set-cookie</pre></div>
+  </div>
+
+  <div class="card" id="actuator" data-k="actuator exposure env heapdump beans management endpoints">
+    <h3>Actuator Exposure <span class="cwe">CWE-200</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Actuator wide open — <code class="ep">/env</code> leaks the JWT secret; <code class="ep">/beans</code>,<code class="ep">/mappings</code>,<code class="ep">/heapdump</code> exposed.</span>
+      <pre><span class="m">GET</span> /actuator/env   /actuator/beans   /actuator/mappings</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Expose only health/info; ADMIN-gate /actuator/**; separate mgmt port. See <code class="ep">ActuatorSecurityNotes</code>.</span>
+      <pre><span class="m">GET</span> /roadmap/actuator/explain</pre></div>
+  </div>
+
+  <h2 class="cat" id="dast">DAST points</h2>
+
+  <div class="card" id="httpmethods" data-k="insecure http methods put delete trace 405 method not allowed">
+    <h3>Insecure HTTP Methods <span class="cwe">CWE-650</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Read-only resource answers PUT/DELETE/any verb (no method restriction).</span>
+      <pre>curl -X DELETE /roadmap/dast/httpmethods/vuln/resource   # 200 (bad)</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Map only the verb implemented (<code class="ep">@GetMapping</code>) — others get 405. Disable TRACE.</span>
+      <pre>curl -X DELETE /roadmap/dast/httpmethods/secure/resource # 405</pre></div>
+  </div>
+
+  <div class="card" id="cache" data-k="cacheable sensitive data cache-control no-store cwe-525">
+    <h3>Cacheable Sensitive Data <span class="cwe">CWE-525</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Private balance served <code class="ep">Cache-Control: public, max-age=3600</code> — proxy/CDN/browser can store it.</span>
+      <pre>curl -i /roadmap/dast/cache/vuln/balance</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Send <code class="ep">Cache-Control: no-store, no-cache, must-revalidate</code> on sensitive responses.</span>
+      <pre>curl -i /roadmap/dast/cache/secure/balance</pre></div>
+  </div>
+
+  <div class="card" id="urlsecret" data-k="sensitive data in url query string token referer logs cwe-598">
+    <h3>Secret in URL / Query String <span class="cwe">CWE-598</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">Reset token in the query string — leaks via access logs, browser history, Referer.</span>
+      <pre><span class="m">POST</span> /roadmap/dast/url/vuln/reset?token=SECRET-123&newPass=p</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Carry the secret in a header (or POST body); keep the URL clean.</span>
+      <pre><span class="m">POST</span> /roadmap/dast/url/secure/reset  -H "X-Reset-Token: SECRET-123"</pre></div>
+  </div>
+
+  <div class="card" id="crlf" data-k="crlf injection http response splitting header injection cwe-113">
+    <h3>CRLF / HTTP Response Splitting <span class="cwe">CWE-113</span></h3>
+    <div class="row"><span class="lbl p">PROBLEM</span><span class="t">User input reflected into a response header — <code class="ep">\r\n</code> can inject headers / split the response.</span>
+      <pre><span class="m">GET</span> /roadmap/dast/crlf/vuln/echo?value=hello%0d%0aSet-Cookie:%20x=1</pre></div>
+    <div class="row"><span class="lbl s">SOLUTION</span><span class="t">Strip CR/LF and control chars before the value reaches any header (defence in depth).</span>
+      <pre><span class="m">GET</span> /roadmap/dast/crlf/secure/echo?value=...</pre></div>
+  </div>
+  <h2 class="cat" id="portswigger">PortSwigger topics (vuln + secure pair under each path)</h2>
+  <div class="card" data-k="portswigger server side client side advanced all topics">
+    <div class="row t">Every topic has <code class="ep">/vuln/...</code> and <code class="ep">/secure/...</code>. Full mapping in <a href="roadmap-coverage.md">roadmap-coverage.md</a>.</div>
+    <pre><b>Server-side</b> (/ps/serverside/&lt;topic&gt;)
+  sqli · authentication · pathtraversal · commandinjection · businesslogic
+  informationdisclosure · accesscontrol · fileupload · raceconditions · ssrf
+  xxe · nosqli · apitesting (mass assignment) · webcachedeception
+
+<b>Client-side</b> (/ps/clientside/&lt;topic&gt;)
+  xss · csrf · cors · clickjacking · dombased · websockets
+
+<b>Advanced</b> (/ps/advanced/&lt;topic&gt;)
+  insecuredeserialization · webllm · graphql · ssti · webcachepoisoning
+  hostheader · requestsmuggling · oauth · jwt · prototypepollution · essentialskills</pre>
+  </div>
+
+  </div><!-- /cards -->
+  <div class="none" id="none">No demo matches that filter.</div>
+</main>
+</div>
+<script>
+  const q = document.getElementById('q');
+  const cards = [...document.querySelectorAll('.card')];
+  const cats = [...document.querySelectorAll('h2.cat')];
+  const none = document.getElementById('none');
+  q.addEventListener('input', () => {
+    const v = q.value.trim().toLowerCase();
+    let shown = 0;
+    cards.forEach(c => {
+      const hay = (c.getAttribute('data-k') || '') + ' ' + c.textContent.toLowerCase();
+      const ok = !v || hay.includes(v);
+      c.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    // hide a category heading if all its cards are hidden
+    cats.forEach(h => {
+      let n = h.nextElementSibling, any = false;
+      while (n && !n.matches('h2.cat')) {
+        if (n.classList.contains('card') && n.style.display !== 'none') any = true;
+        n = n.nextElementSibling;
+      }
+      h.style.display = any ? '' : 'none';
+    });
+    none.style.display = shown ? 'none' : 'block';
+  });
+</script>
+</body>
+</html>

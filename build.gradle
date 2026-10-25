@@ -24,6 +24,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+    // Roadmap: Actuator exposure demo (intentionally opened in application.yml).
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // PKI: BouncyCastle for X.509 / PKCS#10 (CA ceremony against SoftHSM via SunPKCS11)
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcutil-jdk18on:1.78.1'
+
     // A07 / A04 — JWT (demonstrates weak vs strong signing)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'

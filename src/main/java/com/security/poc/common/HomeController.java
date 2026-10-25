@@ -62,6 +62,28 @@ public class HomeController {
             A10 Mishandling of Exceptional Conditions
                 VULN   GET  /a10/vuln/divide?a=..&b=..
                 SECURE GET  /a10/secure/divide?a=..&b=..
+
+            ----------------------------------------------------------------
+            ROADMAP gap-demos (keyed to the pentest roadmap, Phases 1/3/4/5)
+            ----------------------------------------------------------------
+            SpEL Injection (Phase 4)
+                VULN   GET  /roadmap/spel/vuln/eval?expr=T(java.lang.Runtime)
+                SECURE GET  /roadmap/spel/secure/eval?expr=7*7
+            LDAP Injection (Phase 4)
+                VULN   GET  /roadmap/ldap/vuln/login?user=*)(uid=*&password=x
+                SECURE GET  /roadmap/ldap/secure/login?user=alice&password=alice123
+            Open Redirect (Phase 4)
+                VULN   GET  /roadmap/openredirect/vuln/go?next=https://evil.example
+                SECURE GET  /roadmap/openredirect/secure/go?next=/roadmap
+            Session fixation / cookie flags (Phase 3)
+                HELPER GET  /roadmap/session/whoami
+                VULN   POST /roadmap/session/vuln/login?user=alice
+                SECURE POST /roadmap/session/secure/login?user=alice
+                VULN   GET  /roadmap/session/vuln/set-cookie     (curl -i)
+                SECURE GET  /roadmap/session/secure/set-cookie   (curl -i)
+            Actuator exposure (Phase 1/5)
+                VULN   GET  /actuator/env   /actuator/beans   /actuator/mappings
+                SECURE GET  /roadmap/actuator/explain   (secure posture described)
             """;
     }
 }

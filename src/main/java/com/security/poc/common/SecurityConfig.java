@@ -63,7 +63,13 @@ public class SecurityConfig {
                     "/clientside/vuln/**",
                     // PortSwigger topic PoCs are stateless REST endpoints exercised
                     // from Postman/curl, so CSRF adds nothing there.
-                    "/ps/**"))
+                    "/ps/**",
+                    // Roadmap gap-demos are stateless REST endpoints (curl/Postman).
+                    // The /roadmap/session/** demo shows cookie/fixation mechanics
+                    // directly, independent of Spring's CSRF token.
+                    "/roadmap/**",
+                    // PKI CA-ceremony endpoints are stateless REST (curl/Postman).
+                    "/pki/**"))
             .authorizeHttpRequests(auth -> auth
                 // Public: home page, static help, and every intentionally-vulnerable demo.
                 .requestMatchers("/", "/index", "/error", "/h2-console/**").permitAll()
@@ -81,6 +87,15 @@ public class SecurityConfig {
                 // PortSwigger topic PoCs: public. Each controller demonstrates its
                 // own control (headers, tokens, allowlists) internally.
                 .requestMatchers("/ps/**").permitAll()
+                // Roadmap gap-demos: public so the vuln/secure pair is easy to drive.
+                .requestMatchers("/roadmap/**").permitAll()
+                // PKI CA-ceremony endpoints: public in the lab (HSM-backed).
+                .requestMatchers("/pki/**").permitAll()
+                // Actuator is left WIDE OPEN on purpose (roadmap actuator-exposure
+                // demo). The secure posture — ADMIN-gated, separate port, minimal
+                // exposure — is documented in ActuatorSecurityNotes. Never do this
+                // in a real deployment.
+                .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().permitAll()
             )
             // HTTP Basic is enough to demo auth; form login also enabled for browsers.

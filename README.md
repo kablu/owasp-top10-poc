@@ -203,6 +203,147 @@ curl "http://localhost:8080/ps/advanced/ssti/vuln/render?name=\${7*7}"
 
 ---
 
+## Roadmap gap-demos (`/roadmap/**` + `/actuator/**`)
+
+A third tree under `com.security.poc.roadmap`, added to cover items from the
+professional **pentest & vulnerability-assessment roadmap** that the OWASP /
+PortSwigger trees above did not already demonstrate. Each is a `vuln` + `secure`
+pair, stateless (curl/Postman friendly). Full phase → endpoint mapping is in
+[`docs/roadmap-coverage.md`](docs/roadmap-coverage.md).
+
+### SpEL injection — Phase 4 (CWE-917)
+Spring-specific RCE primitive most generic scanners miss.
+```bash
+curl "http://localhost:8080/roadmap/spel/vuln/eval?expr=T(java.lang.Runtime)"     # type ref evaluates
+curl "http://localhost:8080/roadmap/spel/secure/eval?expr=T(java.lang.Runtime)"   # rejected (allow-list + SimpleEvaluationContext)
+```
+
+### LDAP injection — Phase 4 (CWE-90)
+Relevant to AD/directory-backed auth (e.g. an RA).
+```bash
+curl "http://localhost:8080/roadmap/ldap/vuln/login?user=alice)(%26)&password=x"    # authenticated=true (bypass)
+curl "http://localhost:8080/roadmap/ldap/secure/login?user=alice)(%26)&password=x"  # authenticated=false (RFC 4515 escaping)
+```
+
+### Open redirect — Phase 4 (CWE-601)
+```bash
+curl -i "http://localhost:8080/roadmap/openredirect/vuln/go?next=https://evil.example"    # 302 off-site
+curl -i "http://localhost:8080/roadmap/openredirect/secure/go?next=https://evil.example"  # 400 (allow-list)
+```
+
+### Session fixation & cookie flags — Phase 3 (CWE-384 / CWE-1004 / CWE-614)
+```bash
+curl -X POST "http://localhost:8080/roadmap/session/vuln/login?user=alice"     # sessionIdChanged=false
+curl -X POST "http://localhost:8080/roadmap/session/secure/login?user=alice"   # sessionIdChanged=true
+curl -i "http://localhost:8080/roadmap/session/secure/set-cookie"              # HttpOnly; Secure; SameSite=Strict
+```
+
+### Actuator exposure — Phase 1/5 (CWE-200)
+Actuator is left **wide open on purpose** (`management.endpoints.web.exposure.include: "*"`).
+```bash
+curl "http://localhost:8080/actuator/env"      # leaks poc.jwt.strong-secret and more
+curl "http://localhost:8080/actuator/beans"    # full app wiring
+curl "http://localhost:8080/roadmap/actuator/explain"   # the secure posture, documented
+```
+Secure configuration lives in `roadmap/actuator/ActuatorSecurityNotes` (minimal
+exposure, ADMIN-gated filter chain, separate management port).
+
+## DAST-flagged points (`/roadmap/dast/**`)
+
+Runtime issues a DAST scanner (OWASP ZAP / Burp) typically reports, each with a
+`vuln` + `secure` pair.
+
+### Insecure HTTP methods — CWE-650
+```bash
+curl -i -X DELETE http://localhost:8080/roadmap/dast/httpmethods/vuln/resource    # 200 (bad)
+curl -i -X DELETE http://localhost:8080/roadmap/dast/httpmethods/secure/resource  # 405
+```
+
+### Cacheable sensitive data — CWE-525
+```bash
+curl -i http://localhost:8080/roadmap/dast/cache/vuln/balance      # Cache-Control: public, max-age=3600
+curl -i http://localhost:8080/roadmap/dast/cache/secure/balance    # Cache-Control: no-store, ...
+```
+
+### Secret in URL / query string — CWE-598
+```bash
+curl -X POST "http://localhost:8080/roadmap/dast/url/vuln/reset?token=SECRET-123&newPass=p"   # token in URL/logs
+curl -X POST  http://localhost:8080/roadmap/dast/url/secure/reset -H "X-Reset-Token: SECRET-123" -d newPass=p
+```
+
+### CRLF injection / HTTP response splitting — CWE-113
+```bash
+curl "http://localhost:8080/roadmap/dast/crlf/vuln/echo?value=hello%0d%0aSet-Cookie:%20x=1"
+curl "http://localhost:8080/roadmap/dast/crlf/secure/echo?value=hello%0d%0aSet-Cookie:%20x=1"   # CR/LF stripped
+```
+
+## PKI CA ceremony with SoftHSM (`com.security.poc.pki`)
+
+A BouncyCastle + PKCS#11 (SunPKCS11) flow that mirrors a real external-CA
+enrolment (e.g. submitting a CSR to CCA India and binding the returned cert to an
+HSM key). Keys are generated **inside SoftHSM** and never leave the token.
+
+Steps: (1) Root CA keypair in HSM + self-sign → (2) Intermediate keypair in HSM +
+PKCS#10 CSR → (3) Root signs the CSR (role of the external CA) → (4) bind the
+issued cert to its HSM key and verify the chain.
+
+### Prerequisites (WSL — the JVM must run where the native lib is)
+
+```bash
+# Linux JVM: a Windows JVM cannot load libsofthsm2.so
+softhsm2-util --init-token --slot 0 --label ra-poc --so-pin 3537 --pin 1234
+```
+
+`softhsm-pkcs11.cfg` points SunPKCS11 at `/usr/lib/softhsm/libsofthsm2.so`,
+`slotListIndex = 0`. Config/PIN are overridable via `pki.pkcs11.config` and
+`pki.pkcs11.pin`.
+
+### Run the whole ceremony standalone (inside WSL)
+
+> **Do NOT run this from the IDE / Gradle on Windows.** SoftHSM's library is a
+> Linux `.so`; a Windows JVM cannot load it, and Windows SunPKCS11 even rejects a
+> `/usr/...` path with *"Absolute path required for library value"*. Build on
+> Windows if you like (`gradlew compileJava`), but **run inside WSL**.
+
+Easiest — the helper script (builds the classpath, picks the WSL JVM):
+
+```bash
+# in a WSL/Ubuntu shell
+cd /mnt/c/eclipse-workspace/owasp-top10-poc
+./run-pki-ceremony.sh                 # defaults: softhsm-pkcs11.cfg, PIN 1234
+```
+
+Or by hand:
+
+```bash
+BC=~/.gradle/caches/modules-2/files-2.1/org.bouncycastle   # or /mnt/c/Users/<you>/.gradle/...
+CP="build/classes/java/main:$BC/bcprov-jdk18on/1.78.1/*/bcprov-jdk18on-1.78.1.jar:\
+$BC/bcpkix-jdk18on/1.78.1/*/bcpkix-jdk18on-1.78.1.jar:\
+$BC/bcutil-jdk18on/1.78.1/*/bcutil-jdk18on-1.78.1.jar"
+~/jdk21/bin/java --add-modules jdk.crypto.cryptoki -cp "$CP" \
+     com.security.poc.pki.PkiCeremonyRunner softhsm-pkcs11.cfg 1234
+```
+
+### Or step through it over REST (run the app in WSL)
+
+```bash
+curl -X POST http://localhost:8080/pki/root/create         # 1 keypair in HSM + self-sign
+curl -X POST http://localhost:8080/pki/intermediate/csr    # 2 keypair in HSM + CSR
+curl -X POST http://localhost:8080/pki/intermediate/sign   # 3 Root signs the CSR
+curl -X POST http://localhost:8080/pki/chain/build         # 4 bind + verify chain
+curl      http://localhost:8080/pki/entries                # HSM token aliases
+```
+
+Classes: `HsmContext` (opens the token), `CaCeremonyService` (BC ceremony,
+Spring-free), `PkiController` (REST), `PkiCeremonyRunner` (standalone `main`).
+
+## Navigable index
+
+Open [`docs/index.html`](docs/index.html) in a browser for a single, filterable
+page listing every demo as **Problem → Solution** (sidebar navigation + live
+search box). The full roadmap phase → endpoint map is in
+[`docs/roadmap-coverage.md`](docs/roadmap-coverage.md).
+
 ## Notes on Spring Security config
 
 - `common/SecurityConfig` centralizes auth. Convention: `/a0X/vuln/**` is public,

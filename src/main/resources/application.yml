@@ -28,6 +28,22 @@ poc:
     # uses a trivially guessable key on purpose.
     strong-secret: "c2VjdXJlLXJhbmRvbS0zMi1ieXRlLXNlY3JldC1rZXktMDEyMzQ1Njc4OQ=="
 
+# ---------------------------------------------------------------------------
+# ROADMAP DEMO — Actuator exposure (INTENTIONALLY VULNERABLE).
+# Exposing everything and showing full health details is the classic
+# misconfiguration. The secure posture (include: health,info; show-details:
+# when-authorized; separate port; ADMIN-gated) is documented in
+# ActuatorSecurityNotes. DO NOT ship this.
+# ---------------------------------------------------------------------------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
 logging:
   level:
     root: INFO
